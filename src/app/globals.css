@@ -1,0 +1,53 @@
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.panel{
+  position: fixed;
+  z-index: 998;
+  opacity: 95%;
+  background-color:#232323;
+  width: 90%;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  margin-left: auto;
+  margin-right: auto;
+  transform: translate(0,-200%);
+  transition: transform 0.9s ease;
+  overflow-y: scroll;
+}
+
+.panel.is-active{
+  transform: translate(0,0);
+}
+
+.chat-container {
+  position: fixed;
+  bottom: 20px;   /* Adjust the distance from the bottom as needed */
+  right: 20px;    /* Adjust the distance from the right as needed */
+  z-index: 999;
+}
+
+.bubble {
+  background-color:coral;
+  border-radius: 20px;
+  padding: 10px;
+}
+
+.positionChat {
+  position: fixed !important;
+  bottom: 20px;   /* Adjust the distance from the bottom as needed */
+  left: 20px;    /* Adjust the distance from the right as needed */
+  z-index: 999;
+  height: 50vh !important;
+}
