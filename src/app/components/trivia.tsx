@@ -78,14 +78,14 @@ export const ShowTrivia = ({ setTimeQuestions, numberQuestion, setNumberQuestion
             };
 
             if(getIndexOfTrueToPlay.length !== users.length){
-                let getFirstUserToValidateMotion:boolean = answersUsers[getIndexOfTrueToPlay[0]]["username"] === username;
-                let getCorrectlyUserToPlay:number = getFirstUserToValidateMotion ? users.findIndex(el => el === username) : users.findIndex(el => el === answersUsers[getIndexOfTrueToPlay[0]]["username"]);
+                let getFirstUserToValidateMotion:boolean = answersUsers[getIndexOfTrueToPlay[0]]["username" as any] === username;
+                let getCorrectlyUserToPlay:number = getFirstUserToValidateMotion ? users.findIndex(el => el === username) : users.findIndex(el => el === answersUsers[getIndexOfTrueToPlay[0]]["username" as any]);
                 
                 for (let index:number = 0; index < getIndexOfTrueToPlay.length; index++) {
                     if(index === 0){
                         getIndexOfTrueToPlay[index] = getCorrectlyUserToPlay;
                     }else{
-                        getIndexOfTrueToPlay[index] = users.findIndex(el => el === answersUsers[getIndexOfTrueToPlay[index]]["username"]);
+                        getIndexOfTrueToPlay[index] = users.findIndex(el => el === answersUsers[getIndexOfTrueToPlay[index]]["username" as any]);
                     };
                 };
             };
@@ -111,7 +111,7 @@ export const ShowTrivia = ({ setTimeQuestions, numberQuestion, setNumberQuestion
         let arrayOptionsToDisplay:string[] = [];
         let randomPositionCorrectAnswer:number = Math.floor(Math.random() * 4);
 
-        arrayOptionsToDisplay.push(...Object.values(dataTrivia[numberQuestion])[3]);
+        arrayOptionsToDisplay.push(...Object.values(dataTrivia[numberQuestion])[3] as any);
         arrayOptionsToDisplay.splice(randomPositionCorrectAnswer, 0, Object.values(dataTrivia[numberQuestion])[1]);
         setOptionsToDisplay(arrayOptionsToDisplay);
     }, [dataTrivia, numberQuestion]);

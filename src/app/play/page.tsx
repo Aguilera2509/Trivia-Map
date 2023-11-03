@@ -5,11 +5,15 @@ import { useEffect, useState } from "react"
 import styles from '../page.module.css'
 import { onValue, ref, remove, set } from "firebase/database"
 import { db } from "../lib/firebaseConfig"
-import { WorldMap } from "../components/Map"
 import { ShowTrivia } from "../components/trivia"
 import { ChatGame } from "../components/chatGame"
 import toast from "react-hot-toast"
 import { useGettingAllSelectedRegions, useGettingDataUsers, useGettingStatePlaying } from "../hooks/useCustoms"
+import dynamic from "next/dynamic";
+
+const WorldMap = dynamic(()=> import("@/app/components/Map"), {
+    ssr:false
+});
 
 export default function Page(){
     const routerGetParams = useSearchParams();
@@ -192,43 +196,43 @@ export default function Page(){
         <>
          <div className={!timeQuestions ? "panel" : "panel is-active"}>
             {statePlaying && 
-            <ShowTrivia
-                setTimeQuestions={setTimeQuestions} 
-                numberQuestion={numberQuestion}
-                setNumberQuestion={setNumberQuestion} 
-                setPlayerToPlay={setPlayerToPlay} 
-                time={time}
-                setTime={setTime}
-                setTurnFormatNumber={setTurnFormatNumber}
-            />
+                <ShowTrivia
+                    setTimeQuestions={setTimeQuestions} 
+                    numberQuestion={numberQuestion}
+                    setNumberQuestion={setNumberQuestion} 
+                    setPlayerToPlay={setPlayerToPlay} 
+                    time={time}
+                    setTime={setTime}
+                    setTurnFormatNumber={setTurnFormatNumber}
+                />
             }
 
             {!statePlaying &&
-            <div className="d-grid gap-2 col-6 mx-auto p-3">
-                <div className="card text-bg-success">
-                    <div className="card-header fw-bold text-center">Code: {routerCode}</div>
+                <div className="d-grid gap-2 col-6 mx-auto p-3">
+                    <div className="card text-bg-success">
+                        <div className="card-header fw-bold text-center">Code: {routerCode}</div>
+                    </div>
+                    <button className="btn btn-warning" type="button" onClick={() => {
+                        if(users[0] !== username) {
+                            toast((t) => (
+                                <span>
+                                The person who have to begin the game is: {users[0]}
+                                <br />
+                                <button className="btn btn-info" onClick={() => toast.dismiss(t.id)}>
+                                    I got it
+                                </button>
+                                </span>
+                            ));
+                            return;
+                        };
+                        setStatePlaying(true);
+                    }}>Start Game!!!!</button>
                 </div>
-                <button className="btn btn-warning" type="button" onClick={() => {
-                    if(users[0] !== username) {
-                        toast((t) => (
-                            <span>
-                              The person who have to begin the game is: {users[0]}
-                              <br />
-                              <button className="btn btn-info" onClick={() => toast.dismiss(t.id)}>
-                                I got it
-                              </button>
-                            </span>
-                        ));
-                        return;
-                    };
-                    setStatePlaying(true);
-                }}>Start Game!!!!</button>
-            </div>
             }
         </div>
 
         <div className={styles.containerMap}>
-            {<div className={styles.mainMap}>
+            <div className={styles.mainMap}>
                 <div className="card text-bg-success" style={{"maxWidth": "18rem"}}>
                     <div className="card-header fw-bold text-center">Code: {routerCode}</div>
                     <div className="card-body">
@@ -237,20 +241,8 @@ export default function Page(){
                     </div>
                 </div>
 
-                {timeQuestions &&
-                    <WorldMap 
-                        setRegion={setRegion} 
-                        timeQuestions={timeQuestions} 
-                    />
-                }
-
-                {!timeQuestions &&
-                    <WorldMap 
-                        setRegion={setRegion} 
-                        timeQuestions={timeQuestions} 
-                    />
-                }
-            </div>}
+                <WorldMap setRegion={setRegion} />
+            </div>
         </div>
         
         <div className="chat-container">

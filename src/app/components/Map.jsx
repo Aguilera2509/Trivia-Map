@@ -2,11 +2,10 @@ import { VectorMap } from "@react-jvectormap/core";
 import { worldMill } from "@react-jvectormap/world";
 import { useSearchParams } from "next/navigation";
 import { useGettingAllSelectedRegions } from "../hooks/useCustoms";
-import { TComponentMap } from "../lib/types";
 
-export const WorldMap = ({ setRegion, timeQuestions }:TComponentMap) => {
+export default function WorldMap({ setRegion }){
     const routerGetParams = useSearchParams();
-    const routerCode:string  = routerGetParams.get("code") as string;
+    const routerCode  = routerGetParams.get("code");
     const selectedRegions = useGettingAllSelectedRegions(routerCode);
 
     return(
@@ -23,7 +22,6 @@ export const WorldMap = ({ setRegion, timeQuestions }:TComponentMap) => {
             "margin": "1rem"
         }} 
         onRegionClick={(event, code) => {
-            if(timeQuestions) return;
             setRegion(code);
         }} />
     );
