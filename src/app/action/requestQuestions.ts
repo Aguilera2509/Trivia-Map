@@ -28,7 +28,7 @@ export async function requestQuestions(formData: unknown) {
     const url_getToken:string = "https://opentdb.com/api_token.php?command=request";
     const request_token:Response = await fetch(url_getToken, { cache:"no-cache" });
     const getTokenFormatJson:any = await request_token.json();
-    let amountQuestions:number = 1;
+    let amountQuestions:number = 50;
     let allDataTriviaMerge:string[];
     let errorMessageTriviAPI:string = "";
 
