@@ -1,58 +1,76 @@
 "use server"
 
-import { redirect } from "next/navigation";
-import { addUsers, dataTrivia } from "../lib/firebaseFunctions";
-import { TodoSchema } from "../lib/types";
+//xiwerab835@wikfee.com
+//Venezuela#25
 
-export async function requestQuestions(formData: unknown) {
-    const id_db:string = crypto.randomUUID();
-    const short_id_db:string = id_db.substring(0,8); 
-    const resultQuestions = TodoSchema.safeParse(formData);
-    
-    if(!resultQuestions.success){
-        let errorMessage:string = "";
+import { addUsers, dataTrivia, saveMap } from "../lib/firebaseFunctions";
+import { getSession } from '@auth0/nextjs-auth0';
 
-        resultQuestions.error.issues.forEach((issue, index) => {
-            errorMessage = errorMessage + issue.path[index] + ": " + issue.message + ". ";
-        });
+const placesToValidate:string[] = ["africaMill", "dzMill", "arMill", "asiaMill", "auMill", "atMill", "beMill", "brMill", "caMill", "usIlChicagoMill", "cnMill", "coMill", "dkMill", "europeMill",
+"frMill", "frRegionsMill", "frRegions_2016Mill", "deMill", "inMill", "iranMill", "itMill", "itRegionsMill", "nlMill", "usNyNewYorkMill", "nzMill", "northAmericaMill", "noMill",
+"oceaniaMill", "plMill", "ptMill", "ruMill", "ruFdMill", "zaMill", "southAmericaMill", "krMill", "esMill", "seMill", "chMill", "thMill", "trMill", "ukRegionsMill", "ukCountriesMill",
+"usMill", "veMill", "worldMill"];
 
-        return {
-            error: errorMessage
-        };
+export async function requestQuestions(formData:FormDataEntryValue, username:string) {
+  const { user } = await getSession() as any;
+  const id_db:string = crypto.randomUUID();
+  const short_id_db:string = id_db.substring(0,8);
+  const itemFound:number = placesToValidate.findIndex((itemToFind:string) => itemToFind === formData);
+
+  if(itemFound === -1){
+    return {
+      error: "That Spot is not allowed, user. Refresh and try again"
     };
-
-    const username_code:string = btoa(resultQuestions.data["username"]);
+  };
     
-    addUsers(short_id_db, resultQuestions.data["username"]);
+  const isLogin = {
+    //google: ()=> user.sub.match(/google-oauth2/i),
+    //facebook: ()=> user.sub.match(/facebook/i),
+    //twitter: ()=> user.sub.match(/twitter/i),
+    auth: ():boolean => Boolean(user?.sub.match(/auth0/i)),
+  };
+  const oficialUsername:string = isLogin.auth() ? user?.nickname : username.replace(" ", "_");
 
-    const url_getToken:string = "https://opentdb.com/api_token.php?command=request";
-    const request_token:Response = await fetch(url_getToken, { cache:"no-cache" });
-    const getTokenFormatJson:any = await request_token.json();
-    let amountQuestions:number = 50;
-    let allDataTriviaMerge:string[];
-    let errorMessageTriviAPI:string = "";
+  addUsers(short_id_db, oficialUsername, user.picture);
+  saveMap(short_id_db, formData);
 
-    Promise.all([
-        fetch(`https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`, { cache:"no-cache" }),
-        fetch(`https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`, { cache:"no-cache" }),
-        fetch(`https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`, { cache:"no-cache" }),
-        fetch(`https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`, { cache:"no-cache" }),
-        fetch(`https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`, { cache:"no-cache" })
-    ]).then(responses => {
-        return Promise.all(responses.map((res) => res.ok ? res.json() : Promise.reject(res)));
-    }).then(json => {
-        allDataTriviaMerge = [
-            ...json[0].results,
-            ...json[1].results,
-            ...json[2].results,
-            ...json[3].results,
-            ...json[4].results
-        ];
+  const url_getToken:string = "https://opentdb.com/api_token.php?command=request";
+  const request_token:Response = await fetch(url_getToken, { cache:"no-cache" });
+  const getTokenFormatJson:any = await request_token.json();
+  let allDataTriviaApi:string[] = [];
+  let amountQuestions:number = 50;
+  
+  const urls:string[] = [
+    `https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`,
+    `https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`,
+    `https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`,
+    `https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`,
+    `https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`
+  ];
 
-        dataTrivia(short_id_db, allDataTriviaMerge);
-    }).catch(err => {
-        //errorMessageTriviAPI  = err.cause.code || "We have tecnical issues, excuse us";
-    });
+  let count:number = 0;
 
-    redirect(`/play?user=${username_code}&code=${short_id_db}`);
+  const requestAllQuestions = () => {
+    fetch(urls[count], { cache:"no-cache" })
+    .then((response) => response.json())
+    .then((data) => {
+
+      allDataTriviaApi.push(...data.results);
+      count++;
+
+      if(count === urls.length){
+        dataTrivia(short_id_db, allDataTriviaApi);
+      }else{
+        setTimeout(requestAllQuestions, 5050);
+      };
+
+    })
+  };
+
+  requestAllQuestions();
+
+  return {
+    code: short_id_db
+  };
+    
 };

@@ -123,3 +123,18 @@ export const useGettingStatePlaying = (routerCode:string) => {
         setStatePlaying
     };
 };
+
+export const useGettingPlaceToPlay = (routerCode:string):string => {
+    const [map, setMap] = useState<string>("");
+    const starCountRef = ref(db, `${routerCode}/placeToPlay`);
+
+    useEffect(()=> {
+        onValue(starCountRef, (snapshot) => {
+            const map = snapshot.val();
+            if(map === null || map === undefined) return;
+            setMap(map["map"]);
+        });
+    },[]);
+
+    return map;
+};

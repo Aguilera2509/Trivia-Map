@@ -6,10 +6,18 @@ import toast from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
 import { useGettingAnswersUsers, useGettingDataTrivia, useGettingDataUsers } from "../hooks/useCustoms";
 import { TComponentTrivia } from "../lib/types";
+import { useUser } from '@auth0/nextjs-auth0/client';
 
 export const ShowTrivia = ({ setTimeQuestions, numberQuestion, setNumberQuestion ,setPlayerToPlay, time, setTime, setTurnFormatNumber }:TComponentTrivia) => {
+    const { user } = useUser() as any;
+    const isLogin = {
+        //google: ()=> user.sub.match(/google-oauth2/i),
+        //facebook: ()=> user.sub.match(/facebook/i),
+        //twitter: ()=> user.sub.match(/twitter/i),
+        auth: ():boolean => Boolean(user?.sub.match(/auth0/i)),
+    };
+    const oficialUsername =  isLogin.auth() ? user?.nickname : user?.name.replace(" ", "_") as string;
     const routerGetParams = useSearchParams();
-    const username:string = atob(routerGetParams.get("user") as string);
     const routerCode:string  = routerGetParams.get("code") as string;
     const dataTrivia = useGettingDataTrivia(routerCode);
     const users = useGettingDataUsers(routerCode);
@@ -35,10 +43,10 @@ export const ShowTrivia = ({ setTimeQuestions, numberQuestion, setNumberQuestion
     };
 
     const postAnswers = ():void => {
-        let ordered_users:number = users.findIndex((lookForIndexUser:string) => lookForIndexUser === username);
+        let ordered_users:number = users.findIndex((lookForIndexUser:string) => lookForIndexUser === oficialUsername);
         set(ref(db, `${routerCode}/answers/${ordered_users}`), {
             selectedOption,
-            username
+            oficialUsername
         });
     };
 
@@ -78,14 +86,14 @@ export const ShowTrivia = ({ setTimeQuestions, numberQuestion, setNumberQuestion
             };
 
             if(getIndexOfTrueToPlay.length !== users.length){
-                let getFirstUserToValidateMotion:boolean = answersUsers[getIndexOfTrueToPlay[0]]["username" as any] === username;
-                let getCorrectlyUserToPlay:number = getFirstUserToValidateMotion ? users.findIndex(el => el === username) : users.findIndex(el => el === answersUsers[getIndexOfTrueToPlay[0]]["username" as any]);
+                let getFirstUserToValidateMotion:boolean = answersUsers[getIndexOfTrueToPlay[0]]["oficialUsername" as any] === oficialUsername;
+                let getCorrectlyUserToPlay:number = getFirstUserToValidateMotion ? users.findIndex(el => el === oficialUsername) : users.findIndex(el => el === answersUsers[getIndexOfTrueToPlay[0]]["oficialUsername" as any]);
                 
                 for (let index:number = 0; index < getIndexOfTrueToPlay.length; index++) {
                     if(index === 0){
                         getIndexOfTrueToPlay[index] = getCorrectlyUserToPlay;
                     }else{
-                        getIndexOfTrueToPlay[index] = users.findIndex(el => el === answersUsers[getIndexOfTrueToPlay[index]]["username" as any]);
+                        getIndexOfTrueToPlay[index] = users.findIndex(el => el === answersUsers[getIndexOfTrueToPlay[index]]["oficialUsername" as any]);
                     };
                 };
             };

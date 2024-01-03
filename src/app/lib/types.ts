@@ -34,30 +34,11 @@ export type TComponentClickableHeading = {
     numberQuestion:number
 };
 
-export const TodoSchema = z.object({
-    username: z.string({
-        required_error: "Username is required"
-    }).trim().toLowerCase().min(3, {
-        message: "Error: Username must be at least 3 character long."
-    }).max(20, {
-        message: "Error: Username must be at most 20 character long."
-    })
-});
-
-export const TodoSchemaCode = z.object({
-    username: z.string({
-        required_error: "Username is required"
-    }).trim().toLowerCase().min(3, {
-        message: "Error: Username must be at least 3 character long."
-    }).max(20, {
-        message: "Error: Username must be at most 20 character long."
-    }),
-    roomCode: z.string({
+export const TodoSchemaCode = z.string({
         required_error: "Code is required"
     }).trim().toLowerCase().length(8, {
         message: "Code must have 8 characters"
-    })
-});
+    }
+)
 
-export type Todo = z.infer<typeof TodoSchema>
 export type TodoCode = z.infer<typeof TodoSchemaCode>

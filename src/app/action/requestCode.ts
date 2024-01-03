@@ -1,37 +1,46 @@
 "use server"
 
 import { redirect } from "next/navigation"
-import { addUsers, readUsers } from "../lib/firebaseFunctions";
+import { addUsers, codeValidation } from "../lib/firebaseFunctions";
 import { TodoSchemaCode } from "../lib/types";
+import { getSession } from '@auth0/nextjs-auth0';
 
-export async function requestCode(formData: unknown) {
+/*Option made for when you have severals inputs
+    resultCode.error.issues.forEach((issue, index) => {
+        errorMessage = errorMessage + issue.path[index] + ": " + issue.message + ". ";
+});*/
+
+export async function requestCode(formData: FormDataEntryValue, username:string) {
+    const { user } = await getSession() as any;
     const resultCode = TodoSchemaCode.safeParse(formData);
 
     if(!resultCode.success){
-        let errorMessage:string = "";
-
-        resultCode.error.issues.forEach((issue, index) => {
-            errorMessage = errorMessage + issue.path[index] + ": " + issue.message + ". ";
-        });
+        console.log(resultCode.error.issues[0].message);
 
         return {
-            error: errorMessage
+            error: resultCode.error.issues[0].code + ": " +resultCode.error.issues[0].message
         };
     };
 
-    const username_code:string = btoa(resultCode.data["username"]);
-    const short_id_db:string = resultCode.data["roomCode"];
-    const validated:Promise<boolean> = readUsers(short_id_db, resultCode.data["username"]);
+    const short_id_db:string = resultCode.data; //8ba0142a
+    const isLogin = {
+        //google: ():boolean=> Boolean(user.sub.match(/google-oauth2/i)),
+        //facebook: ():boolean=> Boolean(user.sub.match(/facebook/i)),
+        //twitter: ():boolean=> Boolean(user.sub.match(/twitter/i)),
+        auth: ():boolean => Boolean(user?.sub.match(/auth0/i)),
+    };
+    const oficialUsername:string = isLogin.auth() ? user?.nickname : username.replace(" ", "_");
+    const validatedCode:Promise<boolean> = codeValidation(short_id_db);
 
-    return validated.then((accepted:boolean) => {
+    return validatedCode.then((accepted:boolean) => {
         if(accepted){
-            addUsers(short_id_db, resultCode.data["username"]);
-            redirect(`/play?user=${username_code}&code=${short_id_db}`);
+            addUsers(short_id_db, oficialUsername, user.picture);
+            redirect(`/play?code=${short_id_db}`);
         };
 
         if(!accepted){
             return {
-                error: "That username already exists in the room. Please choose any else"
+                error: "Room not exists, evalute well the code, please"
             };
         };
     });
