@@ -50,11 +50,10 @@ export async function requestQuestions(formData:FormDataEntryValue, username:str
 
   let count:number = 0;
 
-  const requestAllQuestions = () => {
+  const requestAllQuestions = ():void => {
     fetch(urls[count], { cache:"no-cache" })
-    .then((response) => response.json())
-    .then((data) => {
-
+    .then((response:Response) => response.json())
+    .then((data:any) => {
       allDataTriviaApi.push(...data.results);
       count++;
 

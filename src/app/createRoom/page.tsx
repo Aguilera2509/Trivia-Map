@@ -79,10 +79,10 @@ export default function Page(){
           toast.error(response.error);
           setLoad(false);
         };
-        if(response.code !== undefined){
+        if(response?.code !== undefined){
             setTimeout(()=>{
                 router.push(`/play?code=${response.code}`);
-            }, 27000);
+            }, 28000);
         };
     };
 
