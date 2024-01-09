@@ -78,8 +78,8 @@ export default function Page(){
     const { user, isLoading } = useUser() as any;
     const [optionFromSelectTag, setOptionFromSelectTag] = useState<string>("africaMill");
     const [allDataTriviaApi, setAllDataTriviaApi] = useState<string[]>([]);
-    const id_db:string = crypto.randomUUID();
-    const short_id_db:string = id_db.substring(0,8);
+    const [id_db, setId_db] = useState<string>(crypto.randomUUID());
+    const [short_id_db, setShort_id_db] = useState<string>(id_db.substring(0,8));
 
     const handleChange = (e:React.ChangeEvent<HTMLSelectElement>):void =>{
         setOptionFromSelectTag(e.target.value);

@@ -1,17 +1,6 @@
 import { Dispatch, SetStateAction } from "react";
 import { z } from "zod";
 
-export type TfirebaseConfig = {
-    apiKey: string,
-    authDomain: string,
-    databaseURL: string,
-    projectId: string,
-    storageBucket: string,
-    messagingSenderId: string,
-    appId: string,
-    measurementId: string
-};
-
 export type TComponentTrivia = {
     setTimeQuestions: Dispatch<SetStateAction<boolean>>,
     numberQuestion: number,
