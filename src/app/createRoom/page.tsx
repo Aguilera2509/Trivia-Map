@@ -1,14 +1,14 @@
 "use client"
 
-import { useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useUser } from '@auth0/nextjs-auth0/client';
-import { requestQuestions } from "../action/requestQuestions";
 import Layout from "../components/layout";
 import { Loader } from "../components/loader";
 import { useRouter } from 'next/navigation';
 import ErrPressingButton from "../components/errUser";
+import { addUsers, dataTrivia, saveMap } from "../lib/firebaseFunctions";
 
 type TOptionsToPlay = {
     value: string;
@@ -63,28 +63,93 @@ const optionsToPlay:TOptionsToPlay[] = [
     { value:"worldMill", label:"The Whole World" },
 ];
 
+const placesToValidate:string[] = ["africaMill", "dzMill", "arMill", "asiaMill", "auMill", "atMill", "beMill", "brMill", "caMill", "usIlChicagoMill", "cnMill", "coMill", "dkMill", "europeMill",
+"frMill", "frRegionsMill", "frRegions_2016Mill", "deMill", "inMill", "iranMill", "itMill", "itRegionsMill", "nlMill", "usNyNewYorkMill", "nzMill", "northAmericaMill", "noMill",
+"oceaniaMill", "plMill", "ptMill", "ruMill", "ruFdMill", "zaMill", "southAmericaMill", "krMill", "esMill", "seMill", "chMill", "thMill", "trMill", "ukRegionsMill", "ukCountriesMill",
+"usMill", "veMill", "worldMill"];
+
+//xiwerab835@wikfee.com
+//Venezuela#25
+
 export default function Page(){
     const router = useRouter();
     const [load, setLoad] = useState<boolean>(false);
     const [err, setErr] = useState<boolean>(false);
-    const { user, isLoading } = useUser();
+    const { user, isLoading } = useUser() as any;
+    const [optionFromSelectTag, setOptionFromSelectTag] = useState<string>("africaMill");
+    const [allDataTriviaApi, setAllDataTriviaApi] = useState<string[]>([]);
+    const id_db:string = crypto.randomUUID();
+    const short_id_db:string = id_db.substring(0,8);
 
-    const clientActionQuestions = async (formData:FormData) => {
-        const placeToPlay = formData.get("optionFromSelectTag") as FormDataEntryValue;
+    const handleChange = (e:React.ChangeEvent<HTMLSelectElement>):void =>{
+        setOptionFromSelectTag(e.target.value);
+    };
+
+    const clientActionQuestions = async (e:FormEvent<HTMLFormElement>):Promise<void> => {
+        e.preventDefault();
+
+        setLoad(true);
         if(user === null || user === undefined) return setErr(true);
         setErr(false);
-        const username = user.name as string;
-        const response = await requestQuestions(placeToPlay, username);
-        if(response?.error){
-          toast.error(response.error);
-          setLoad(false);
+        const itemFound:number = placesToValidate.findIndex((itemToFind:string) => itemToFind === optionFromSelectTag);
+        const isLogin = {
+            //google: ()=> user.sub.match(/google-oauth2/i),
+            //facebook: ()=> user.sub.match(/facebook/i),
+            //twitter: ()=> user.sub.match(/twitter/i),
+            auth: ():boolean => Boolean(user?.sub.match(/auth0/i)),
         };
-        if(response?.code !== undefined){
-            setTimeout(()=>{
-                router.push(`/play?code=${response.code}`);
-            }, 28000);
+        const oficialUsername:string = isLogin.auth() ? user?.nickname : user?.name.replace(" ", "_");
+        
+        if(itemFound === -1){
+            toast.error("That Spot is not allowed, user. Refresh and try again");
+            return;
         };
+
+        addUsers(short_id_db, oficialUsername, user?.picture);
+        saveMap(short_id_db, optionFromSelectTag);
+
+        const url_getToken:RequestInfo = "https://opentdb.com/api_token.php?command=request";
+        const request_token:Response = await fetch(url_getToken, { cache:"no-cache" });
+        const getTokenFormatJson:any = await request_token.json();
+        let amountQuestions:number = 50;
+        let count:number = 0;
+
+        const urls:string[] = [
+            `https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`,
+            `https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`,
+            `https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`,
+            `https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`,
+            `https://opentdb.com/api.php?amount=${amountQuestions}&type=multiple&token=${getTokenFormatJson["token"]}`
+        ];
+        let dataTrivia:string[] = [];
+
+        const requestAllQuestions = ():void => {
+            fetch(urls[count], { cache:"no-cache" })
+            .then((response:Response) => response.json())
+            .then((data:any) => {
+                dataTrivia.push(...data.results);
+                count++;
+        
+                if(count === urls.length){
+                    setAllDataTriviaApi(dataTrivia);
+                }else{
+                    setTimeout(requestAllQuestions, 5050);
+                };
+            }).catch(error => {
+                console.log(error);
+            })
+        };
+
+        requestAllQuestions();
     };
+
+    useEffect(()=> {
+        if(allDataTriviaApi.length === 0) return;
+        dataTrivia(short_id_db, allDataTriviaApi);
+        setTimeout(() => {
+            router.push(`play?code=${short_id_db}`);
+        }, 3500);
+    }, [allDataTriviaApi]);
 
     if(isLoading){
         return <h4>Loading...</h4>
@@ -96,13 +161,13 @@ export default function Page(){
 
     return(
         <section>
-            <form onSubmit={() => setLoad(true)} action={clientActionQuestions}>
+            <form onSubmit={clientActionQuestions}>
                 <Layout>
                     <h5 className="card-header">Features of Your Game, have Fun</h5>
                     <div className="card-body">
                         <div className="mb-3">
                             <label className="form-label" htmlFor="optionChosenFromSelectTag">Choose where you wanna play</label>
-                            <select className="form-select" id="optionChosenFromSelectTag" name="optionFromSelectTag" aria-label="Default select example">
+                            <select className="form-select" id="optionChosenFromSelectTag" name="optionFromSelectTag" value={optionFromSelectTag} onChange={handleChange} aria-label="Default select example">
                                 {optionsToPlay.map((option) => (
                                     <option value={option.value} key={option.value}>{option.label}</option>
                                 ))}
@@ -118,7 +183,7 @@ export default function Page(){
                     {load &&
                     <>
                         <div className="alert alert-success" role="alert">
-                            Sorry, due to the database we are using this process can take 20 seconds, user
+                            Sorry, due to the database we are using this process can take 24 seconds, user
                         </div>
                         <Loader />
                     </>

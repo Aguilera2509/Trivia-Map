@@ -15,7 +15,7 @@ export function addUsers(short_id_db:string, username:string, picture:string):vo
     });
 };
 
-export function saveMap(short_id_db:string, map:FormDataEntryValue):void{
+export function saveMap(short_id_db:string, map:string):void{
     set(ref(db, `${short_id_db}/placeToPlay/`), {
         map
     });
