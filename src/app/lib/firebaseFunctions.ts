@@ -8,8 +8,7 @@ export function dataTrivia(short_id_db:string, AllDataTriviaMerge:any):void{
 };
 
 export function addUsers(short_id_db:string, username:string, picture:string):void{
-    const id_user:number = Date.now();
-    set(ref(db, `${short_id_db}/users/${id_user}`), {
+    set(ref(db, `${short_id_db}/users/${username}`), {
         username,
         picture
     });

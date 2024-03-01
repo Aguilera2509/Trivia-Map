@@ -9,14 +9,12 @@ export const useGettingDataUsers = (routerCode:string):string[] => {
     useEffect(()=> {
         onValue(starCountRef, (snapshot)=> {
             const usersFromFirebase = snapshot.val();
-            let usersFormatArray:string[] = [];
-
+            //let usersFormatArray:string[] = [];
             if(usersFromFirebase === null || usersFromFirebase === undefined) return setUsers([]);
-            Object.values(usersFromFirebase).forEach((el:any) => {
+            /*Object.values(usersFromFirebase).forEach((el:any) => {
                 usersFormatArray.push(el["username"]);
-            });
-
-            setUsers(usersFormatArray);
+            });*/
+            setUsers(Object.keys(usersFromFirebase));
         });
     }, []);
 
@@ -30,8 +28,7 @@ export const useGettingDataTrivia = (routerCode:string):string[] => {
     useEffect(()=> {
         onValue(starCountRef, (snapshot) => {
             const questionsTrivia = snapshot.val();
-    
-           setTrivia(questionsTrivia);
+            setTrivia(questionsTrivia);
         });
     }, []);
 
@@ -72,7 +69,44 @@ export const useGettingAllSelectedRegions = (routerCode:string):{[key:string]:nu
         });
     }, []);
 
-    return allSelectedRegions;
+    return allSelectedRegions; //{"VE": 54}
+};
+
+const convertDataToGetUsersAndCountries = (data:{[key:string]:{[key:string]:{[key:string]:string}}}):{[key:string]:string} => {
+    let countriesFormatCompleletyObject:{[key:string]:string} = {};
+    let getAllCountries:{[key:string]:string}[] = [];
+
+    Object.entries(data).forEach((el:any) => {
+        for (const key in el[1]) {
+            const countriesFormatObject = {
+                [el[1][key].region as string]: el[0] as string
+            };
+            getAllCountries.push(countriesFormatObject);
+        };
+    });
+
+    getAllCountries.forEach(formatObject => {
+        countriesFormatCompleletyObject[Object.keys(formatObject).toString()] = Object.values(formatObject).toString();
+    });
+
+    return countriesFormatCompleletyObject;
+};
+
+export const useGettingAllSelectedUsersAndCountries = (routerCode:string):{[key:string]:string} => {
+    const [allSelectedRegions, setAllSelectedRegions] = useState({});
+    const starCountRef = ref(db, `${routerCode}/invadedCountries`);
+
+    useEffect(() => {
+        onValue(starCountRef, (snapshot) => {
+            const regionsSelected:{[key:string]:{[key:string]:{[key:string]:string}}} = snapshot.val();
+    
+            if(regionsSelected === null || regionsSelected === undefined) return setAllSelectedRegions({});
+        
+            setAllSelectedRegions((prev) => ({...prev, ...convertDataToGetUsersAndCountries(regionsSelected)}));
+        });
+    }, []);
+
+    return allSelectedRegions; //{"VE": *username*} -- {"VE": "Aguilera2509"}
 };
 
 export const useGettingAnswersUsers = (routerCode:string):string[] => {
@@ -103,25 +137,6 @@ export const useGettingMessagesUsers = (routerCode:string):string[] => {
     }, []);
 
     return readMessages;
-};
-
-
-export const useGettingStatePlaying = (routerCode:string) => {
-    const [statePlaying, setStatePlaying] = useState<boolean>(false)
-    const starCountRef = ref(db, `${routerCode}/playing`);
-
-    useEffect(() => {
-        onValue(starCountRef, (snapshot) => {
-            const stateGame = snapshot.val();
-            if(stateGame === null || stateGame === undefined) return;
-            setStatePlaying(stateGame["statePlaying"]);
-        });
-    }, []);
-
-    return{
-        statePlaying,
-        setStatePlaying
-    };
 };
 
 export const useGettingPlaceToPlay = (routerCode:string):string => {

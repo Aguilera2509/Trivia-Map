@@ -17,7 +17,7 @@ export type TComponentMap = {
 };
 
 export type TComponentClickableHeading = {
-    data:string, 
+    dataOption:string, 
     selectedOption:string, 
     setSelectedOption:Dispatch<SetStateAction<string>>, 
     numberQuestion:number

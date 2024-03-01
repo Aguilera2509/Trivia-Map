@@ -2,13 +2,13 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import toast from "react-hot-toast";
-import { useUser } from '@auth0/nextjs-auth0/client';
+import { useRouter } from 'next/navigation';
 import Layout from "../components/layout";
 import { Loader } from "../components/loader";
-import { useRouter } from 'next/navigation';
-import ErrPressingButton from "../components/errUser";
+import { ErrPressingButton, ErrApiAlert } from "../components/errsAlert";
 import { addUsers, dataTrivia, saveMap } from "../lib/firebaseFunctions";
+import toast from "react-hot-toast";
+import { useUser } from '@auth0/nextjs-auth0/client';
 
 type TOptionsToPlay = {
     value: string;
@@ -68,9 +68,6 @@ const placesToValidate:string[] = ["africaMill", "dzMill", "arMill", "asiaMill",
 "oceaniaMill", "plMill", "ptMill", "ruMill", "ruFdMill", "zaMill", "southAmericaMill", "krMill", "esMill", "seMill", "chMill", "thMill", "trMill", "ukRegionsMill", "ukCountriesMill",
 "usMill", "veMill", "worldMill"];
 
-//xiwerab835@wikfee.com
-//Venezuela#25
-
 export default function Page(){
     const router = useRouter();
     const [load, setLoad] = useState<boolean>(false);
@@ -80,6 +77,7 @@ export default function Page(){
     const [allDataTriviaApi, setAllDataTriviaApi] = useState<string[]>([]);
     const [id_db, setId_db] = useState<string>(crypto.randomUUID());
     const [short_id_db, setShort_id_db] = useState<string>(id_db.substring(0,8));
+    const [errApiTrivia, setErrApiTrivia] = useState<boolean>(false);
 
     const handleChange = (e:React.ChangeEvent<HTMLSelectElement>):void =>{
         setOptionFromSelectTag(e.target.value);
@@ -88,6 +86,7 @@ export default function Page(){
     const clientActionQuestions = async (e:FormEvent<HTMLFormElement>):Promise<void> => {
         e.preventDefault();
 
+        setErrApiTrivia(false);
         setLoad(true);
         if(user === null || user === undefined) return setErr(true);
         setErr(false);
@@ -105,8 +104,8 @@ export default function Page(){
             return;
         };
 
-        addUsers(short_id_db, oficialUsername, user?.picture);
-        saveMap(short_id_db, optionFromSelectTag);
+        //addUsers(short_id_db, oficialUsername, user?.picture);
+        //saveMap(short_id_db, optionFromSelectTag);
 
         const url_getToken:RequestInfo = "https://opentdb.com/api_token.php?command=request";
         const request_token:Response = await fetch(url_getToken, { cache:"no-cache" });
@@ -132,11 +131,15 @@ export default function Page(){
         
                 if(count === urls.length){
                     setAllDataTriviaApi(dataTrivia);
+                    addUsers(short_id_db, oficialUsername, user?.picture);
+                    saveMap(short_id_db, optionFromSelectTag);
                 }else{
                     setTimeout(requestAllQuestions, 5050);
                 };
             }).catch(error => {
                 console.log(error);
+                setErrApiTrivia(true);
+                setLoad(false);
             })
         };
 
@@ -190,6 +193,9 @@ export default function Page(){
                     }
                     {err &&
                         <ErrPressingButton />
+                    }
+                    {errApiTrivia &&
+                        <ErrApiAlert />
                     }
                 </Layout>
             </form>

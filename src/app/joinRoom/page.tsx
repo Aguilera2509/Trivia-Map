@@ -7,7 +7,7 @@ import { useUser } from "@auth0/nextjs-auth0/client";
 import Layout from "../components/layout";
 import { Loader } from "../components/loader";
 import { useRouter } from "next/navigation";
-import ErrPressingButton from "../components/errUser";
+import { ErrPressingButton } from "../components/errsAlert";
 import { TodoSchemaCode } from "../lib/types";
 import { addUsers, codeValidation } from "../lib/firebaseFunctions";
 

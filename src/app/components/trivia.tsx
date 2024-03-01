@@ -55,12 +55,14 @@ export const ShowTrivia = ({ setTimeQuestions, numberQuestion, setNumberQuestion
     }, []);
 
     useEffect(()=> {
+        if(dataQuestions.correct.length === 0) return;
+        
         let interval = setInterval(()=> {
             if(time > 0){
                 setTime((prev) => prev - 1);
             };
         }, 1000);
-        
+
         if(time === 0){
             let getTruesToPlay:boolean[] = answersUsers.map((el:any) =>  el["selectedOption"] === dataQuestions.correct);
             let getIndexOfTrueToPlay:number[] = [];
@@ -105,7 +107,7 @@ export const ShowTrivia = ({ setTimeQuestions, numberQuestion, setNumberQuestion
         postSeconds();
 
         return () => clearInterval(interval);
-    }, [time]);
+    }, [time, dataQuestions]);
 
     useEffect(()=> {
         if(dataTrivia[numberQuestion] === undefined || dataTrivia[numberQuestion] === null) return;
@@ -136,7 +138,7 @@ export const ShowTrivia = ({ setTimeQuestions, numberQuestion, setNumberQuestion
     }, [answersUsers]);
 
     return(
-        <div className={`p-4 mb-2 mt-4 rounded-4 text-center bg-dark-subtle`}>
+        <div className={`p-4 mb-2 mt-4 rounded-4 text-center bg-dark-subtle`} onContextMenu={(e) => e.preventDefault()}>
             <div className="container text-center mb-3">
                 <div className="row">
                     <div className="col">
@@ -155,7 +157,7 @@ export const ShowTrivia = ({ setTimeQuestions, numberQuestion, setNumberQuestion
             </div>
 
             {optionsToDisplay.map((el, index) => <ClickableHeading key={index} 
-                data={el} 
+                dataOption={el} 
                 selectedOption={selectedOption} 
                 setSelectedOption={setSelectedOption}
                 numberQuestion={numberQuestion}

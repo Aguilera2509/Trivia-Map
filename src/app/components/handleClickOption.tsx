@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { TComponentClickableHeading } from '../lib/types';
 import { useUser } from '@auth0/nextjs-auth0/client';
 
-export const ClickableHeading = ({ data, selectedOption, setSelectedOption, numberQuestion }:TComponentClickableHeading) => {
+export const ClickableHeading = ({ dataOption, selectedOption, setSelectedOption, numberQuestion }:TComponentClickableHeading) => {
     const { user } = useUser() as any;
     const isLogin = {
         //google: ()=> user.sub.match(/google-oauth2/i),
@@ -21,7 +21,7 @@ export const ClickableHeading = ({ data, selectedOption, setSelectedOption, numb
 
     const handleClick = () => {
         if(selectedOption.length === 0){
-            setSelectedOption(data);
+            setSelectedOption(dataOption);
             setIsClicked(true);
         };
     };
@@ -34,8 +34,8 @@ export const ClickableHeading = ({ data, selectedOption, setSelectedOption, numb
     useEffect(()=> {
         let lookingForYourAnswer:string[] = answersUsers.map((el:any) => el["oficialUsername"] === oficialUsername ? el["selectedOption"] : "");
         let searchingYourIndexAtUsers:number = users.findIndex(el => el === oficialUsername);
-        if(lookingForYourAnswer[searchingYourIndexAtUsers] !== undefined && data === lookingForYourAnswer[searchingYourIndexAtUsers]){
-            setSelectedOption(data);
+        if(lookingForYourAnswer[searchingYourIndexAtUsers] !== undefined && dataOption === lookingForYourAnswer[searchingYourIndexAtUsers]){
+            setSelectedOption(dataOption);
             setIsClicked(true);
         };
     }, [answersUsers])
@@ -44,8 +44,7 @@ export const ClickableHeading = ({ data, selectedOption, setSelectedOption, numb
         <h3
             onClick={handleClick}
             className={`form-control ${!isClicked ? "text-bg-secondary" : "text-bg-primary"}`}
-        >
-        {data}
-        </h3>
+            dangerouslySetInnerHTML={{ __html: dataOption }}
+        ></h3>
     );
 };

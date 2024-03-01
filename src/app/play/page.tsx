@@ -1,18 +1,21 @@
 "use client"
 
+//xiwerab835@wikfee.com
+//Venezuela#25
+
 import { useSearchParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import dynamic from "next/dynamic";
+import Image from "next/image"
 import styles from '../page.module.css'
-import { onValue, ref, remove, set } from "firebase/database"
 import { db } from "../lib/firebaseConfig"
+import { codeValidation } from "../lib/firebaseFunctions"
 import { ShowTrivia } from "../components/trivia"
 import { ChatGame } from "../components/chatGame"
 import toast from "react-hot-toast"
-import { useGettingAllSelectedRegions, useGettingDataUsers, useGettingStatePlaying } from "../hooks/useCustoms"
-import dynamic from "next/dynamic";
+import { onValue, ref, remove, set } from "firebase/database"
+import { useGettingAllSelectedUsersAndCountries, useGettingAllSelectedRegions, useGettingDataUsers } from "../hooks/useCustoms"
 import { useUser } from '@auth0/nextjs-auth0/client';
-import Image from "next/image"
-import { codeValidation } from "../lib/firebaseFunctions"
 
 const WorldMap = dynamic(()=> import("@/app/components/Map"), {
     ssr:false
@@ -33,9 +36,9 @@ export default function Page(){
     const users = useGettingDataUsers(routerCode);
     const [region, setRegion] = useState<string>("");
     const [isOpenModalChat, setIsOpenModalChat] = useState<boolean>(false);
-
+    
     const selectedRegions = useGettingAllSelectedRegions(routerCode);
-    const { statePlaying, setStatePlaying } = useGettingStatePlaying(routerCode);
+    const [statePlaying, setStatePlaying] = useState<boolean>(false);
     const [id_number, setId_Number] = useState<number>(0);
     const [turnFormatNumber, setTurnFormatNumber] = useState<number>(0);
     const [timeQuestions, setTimeQuestions] = useState<boolean>(true);
@@ -43,9 +46,12 @@ export default function Page(){
     const [playerToPlay, setPlayerToPlay] = useState<number[]>([]);
     const [time, setTime] = useState<number>(24);
 
-    const [lengthOfCountriesToFinishGaming, setLengthOfCountriesToFinishGaming] = useState<number>(0);
     const allowedCountry:number = Object.keys(selectedRegions).findIndex((el:string) => el === region);
+    const [letChooseSelectedCountries, setLetChooseSelectedCountries] = useState<boolean>(true);
+    const allCountriesSelectedByAllUsers = useGettingAllSelectedUsersAndCountries(routerCode);
+    const [lengthOfCountriesToFinishGaming, setLengthOfCountriesToFinishGaming] = useState<number>(0);
     const [endGaming, setEndGaming] = useState<boolean>(false);
+    const [winner, setWinner] = useState<string>("");
 
     const idColorMap = ():void => {
         let id: number;
@@ -68,22 +74,24 @@ export default function Page(){
     };
 
     const postYourRegionsToFirebase = ():void => {
-        const id_country:number = Date.now();
-
-        set(ref(db, `${routerCode}/invadedCountries/${oficialUsername}/${id_country}`), {
+        set(ref(db, `${routerCode}/invadedCountries/${oficialUsername}/${region}`), {
             id_number,
             region
         });
     };
 
+    const postTimeQuestions = ():void => {
+        if(users.length === 0) return;
+        set(ref(db, `${routerCode}/timeOfQuestions`), {
+            timeQuestions
+        });
+    };
+
     const getTimeQuestions = ():void => {
         const starCountRef = ref(db, `${routerCode}/timeOfQuestions`);
-    
         onValue(starCountRef, (snapshot) => {
             const time = snapshot.val();
-        
             if(time === null) return;
-
             setTimeQuestions(time["timeQuestions"]);
         });
     };
@@ -97,20 +105,18 @@ export default function Page(){
 
     const getNumberQuestion = ():void => {
         const starCountRef = ref(db, `${routerCode}/numberQuestion`);
-    
         onValue(starCountRef, (snapshot) => {
             const questionNumber = snapshot.val();
-        
             if(questionNumber === null) return;
-
             setNumberQuestion(questionNumber["numberQuestion"]);
         });
     };
 
-    const deleteAnswers = ():void => {
-        if(time !== 0) return;
-        const startRef = ref(db, `${routerCode}/answers`);
-        remove(startRef);
+    const postUpdateTurn = ():void => {
+        if(users.length === 0) return;
+        set(ref(db, `${routerCode}/turnGame`), {
+            turnFormatNumber
+        });
     };
 
     const getTurn = ():void => {
@@ -123,20 +129,6 @@ export default function Page(){
         });
     };
 
-    const postUpdateTurn = ():void => {
-        if(users.length === 0) return;
-        set(ref(db, `${routerCode}/turnGame`), {
-            turnFormatNumber
-        });
-    };
-
-    const postTimeQuestions = ():void => {
-        if(users.length === 0) return;
-        set(ref(db, `${routerCode}/timeOfQuestions`), {
-            timeQuestions
-        });
-    };
-
     const postStatePlaying = ():void => {
         if(users.length === 0) return;
         set(ref(db, `${routerCode}/playing`), {
@@ -144,10 +136,32 @@ export default function Page(){
         });
     };
 
+    const getStatePlaying = ():void => {
+        const starCountRef = ref(db, `${routerCode}/playing`);
+        onValue(starCountRef, (snapshot) => {
+            const stateGame = snapshot.val();
+            if(stateGame === null || stateGame === undefined) return setStatePlaying(false);
+            setStatePlaying(stateGame["statePlaying"]);
+        });
+    };
+
+    const deleteCountryFromRival = (user:string):void => {
+        if(time !== 0) return;
+        const startRef = ref(db, `${routerCode}/invadedCountries/${user}/${region}`);
+        remove(startRef);
+    };
+
+    const deleteAnswers = ():void => {
+        if(users.length === 0) return;
+        const startRef = ref(db, `${routerCode}/answers`);
+        remove(startRef);
+    };
+
     useEffect(() => {
         getTimeQuestions();
         getNumberQuestion();
         getTurn();
+        getStatePlaying();
     }, []);
 
     useEffect(()=> {
@@ -162,12 +176,10 @@ export default function Page(){
 
     useEffect(()=> {
         let responseToKeepPages:Promise<boolean> = codeValidation(routerCode);
-
         responseToKeepPages.then((response) => {
             if(response) return;
             router.push("/");
         });
-
     }, [routerCode]);
 
     useEffect(() => {
@@ -176,9 +188,17 @@ export default function Page(){
             toast.error("It isn't your turn");
             return;
         };
-        if(allowedCountry !== -1){
+        if(allowedCountry !== -1 && letChooseSelectedCountries){
             toast("This country has already onwer. Please by this moment choose another else", { duration: 5000, });
             return;
+        };
+        if(!letChooseSelectedCountries && oficialUsername === allCountriesSelectedByAllUsers[`${region}`]){
+            toast("You have already this country, select other one else");
+            return;
+        };
+        if(!letChooseSelectedCountries){
+            let removeCountryFromAnyUser = allCountriesSelectedByAllUsers[`${region}`]; //Remove it to send it to the new conquerer user.
+            deleteCountryFromRival(removeCountryFromAnyUser);
         };
 
         postYourRegionsToFirebase();
@@ -209,13 +229,14 @@ export default function Page(){
 
     useEffect(() => {
         postNumberQuestion();
-        
-        if(users.length === 0) return;
+
+        if(region.length === 0) return;
+        console.log("fuck");
+        deleteAnswers();
         setPlayerToPlay([]);
         setTimeQuestions(true);
         setTurnFormatNumber(0);
         setTime(24);
-        deleteAnswers();
     }, [numberQuestion]);
 
     useEffect(() => {
@@ -223,14 +244,23 @@ export default function Page(){
     }, [statePlaying]);
     
     useEffect(()=>{
-        if(Object.keys(selectedRegions).length === 0) return;
+        if(Object.keys(selectedRegions).length === 0 || lengthOfCountriesToFinishGaming !== Object.keys(selectedRegions).length) return;
 
-        if(lengthOfCountriesToFinishGaming === Object.keys(selectedRegions).length){
-            toast.success('End of this game, congratulation!! For this moment everyone wins or you all can get who have more spots and win!!');
-            setEndGaming(true);
+        if(lengthOfCountriesToFinishGaming === Object.keys(selectedRegions).length && letChooseSelectedCountries){
+            toast.success('End of the Phase 1. Phase 2: Be ready. Its time to conquer it ALL. Its time to be completely a conquerer');
+            setLetChooseSelectedCountries(false);
             return;
         };
     }, [selectedRegions]);
+
+    useEffect(()=>{
+        if(lengthOfCountriesToFinishGaming === 0 || Object.keys(allCountriesSelectedByAllUsers).length === 0) return;
+        if(Object.keys(allCountriesSelectedByAllUsers).length !== lengthOfCountriesToFinishGaming) return;
+        let filterUserToGetWinner = Object.values(allCountriesSelectedByAllUsers).filter(el => el === oficialUsername);
+        if(filterUserToGetWinner.length !== lengthOfCountriesToFinishGaming) return;
+        setEndGaming(true);
+        setWinner(filterUserToGetWinner[0]);
+    }, [allCountriesSelectedByAllUsers, lengthOfCountriesToFinishGaming]);
 
     if(isLoading){
         return <h4>Loading...</h4>
@@ -242,8 +272,8 @@ export default function Page(){
 
     return(
         <>
-         {!endGaming && 
-         <div className={!timeQuestions ? "panel" : "panel is-active"}>
+        {!endGaming &&
+            <div className={!timeQuestions ? "panel" : "panel is-active"}>
             {statePlaying && 
                 <ShowTrivia
                     setTimeQuestions={setTimeQuestions} 
@@ -278,7 +308,21 @@ export default function Page(){
                     }}>Start Game!!!!</button>
                 </div>
             }
-        </div>}
+            </div>
+        }
+        
+        {endGaming &&
+            <div className="panel is-active">
+                <div className="d-grid gap-2 col-6 mx-auto p-3">
+                    <div className="card text-bg-success">
+                        <div className="card-header fw-bold text-center">End of this game, congratulation!! Winner {winner} </div>
+                    </div>
+                    <button className="btn btn-warning" type="button" onClick={() => {
+                        router.push("/");
+                    }}>Go Back</button>
+                </div>
+            </div>
+        }
 
         <div className={styles.containerMap}>
             <Image src="/kompass-compass.gif" className="position-absolute bottom-30 end-0" alt="Compass" width={90} height={90} />
