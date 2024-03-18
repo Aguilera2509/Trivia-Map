@@ -1,20 +1,20 @@
 import { VectorMap } from "@react-jvectormap/core";
 import { esMill } from "@react-jvectormap/spain";
 import { useSearchParams } from "next/navigation";
-import { useGettingAllSelected, useGettingAllSelectedRegions } from "@/app/hooks/useCustoms";
-import React, { useEffect } from "react";
+import { useGettingAllSelectedUsersAndCountries, useGettingAllSelectedRegions } from "@/app/hooks/useCustoms";
+import { useEffect } from "react";
 
 export default function SpainMap({ setRegion, setLengthOfCountriesToFinishGaming }){
     const routerGetParams = useSearchParams();
     const routerCode  = routerGetParams.get("code");
     const selectedRegions = useGettingAllSelectedRegions(routerCode);
-    //let test = useGettingAllSelected(routerCode); //Super Test
+    //let test = useGettingAllSelectedUsersAndCountries(routerCode); //Super Test
     let styleMap = {"width": "85%", "height": "700px", "margin": "1rem"};
 
     useEffect(()=>{
-        if(Object.keys(esMill.content.paths).length === 0) return;        
+        if(Object.keys(esMill.content.paths).length === 0) return;       
         setLengthOfCountriesToFinishGaming(Object.keys(esMill.content.paths).length)
-    },[]);
+    },[]); //Pur dependency later if can put one, idk...
 
     return(
         <VectorMap map={esMill} series={{
@@ -49,4 +49,18 @@ export default function SpainMap({ setRegion, setLengthOfCountriesToFinishGaming
                     return test[code] ? `${test[code]}` : "";
                 }}
             }}
+*/
+
+/*
+        onRegionTipShow={function reginalTip(event, label, code){
+            return label.html(`
+                <div style="display: none"></div>
+            `);
+        }} labels={{ 
+            regions:{
+                render: function(code) {
+                return test[code] ? `${test[code]}` : "";
+            }}
+        }}  key={Date.now()}
+
 */

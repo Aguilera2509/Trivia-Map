@@ -230,8 +230,8 @@ export default function Page(){
     useEffect(() => {
         postNumberQuestion();
 
-        if(region.length === 0) return;
-        console.log("fuck");
+        if(id_number === 0) return;
+        //console.log("test");
         deleteAnswers();
         setPlayerToPlay([]);
         setTimeQuestions(true);
